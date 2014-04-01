@@ -85,7 +85,7 @@ static void handle_init(struct session *, struct imsg *);
 static void handle_retr(struct session *, struct imsg *);
 static void handle_dele(struct session *, struct imsg *);
 static void handle_list(struct session *, struct imsg *);
-static void handle_list_all(struct session *, struct imsg *, int);
+static void handle_list_all(struct session *, struct imsg *);
 static void handle_update(struct session *, struct imsg *);
 static void needfd(struct imsgev *);
 static void pop3_debug(char *, ...);
@@ -417,9 +417,10 @@ trans_command(struct session *s, int cmd, char *args)
 static void
 get_list_all(struct session *s, int uidl)
 {
-	imsgev_xcompose(&s->iev_maildrop,
-	    (uidl) ? IMSG_MAILDROP_UIDLALL : IMSG_MAILDROP_LISTALL,
-	    s->id, 0, -1, NULL, 0, "list_all");
+	io_pause(&s->io, IO_PAUSE_IN);
+	session_reply(s, "+OK");
+	imsgev_xcompose(&s->iev_maildrop, IMSG_MAILDROP_LISTALL,
+	    s->id, 0, -1, &uidl, sizeof(uidl), "list_all");
 }
 
 static void
@@ -443,7 +444,6 @@ static void
 maildrop_imsgev(struct imsgev *iev, int code, struct imsg *imsg)
 {
 	struct session	key, *r;
-	int		uidl = 0;
 
 	switch (code) {
 	case IMSGEV_IMSG:
@@ -470,11 +470,8 @@ maildrop_imsgev(struct imsgev *iev, int code, struct imsg *imsg)
 		case IMSG_MAILDROP_LIST:
 			handle_list(r, imsg);
 			break;
-		case IMSG_MAILDROP_UIDLALL:
-			uidl = 1;
-			/* FALLTHROUGH */
 		case IMSG_MAILDROP_LISTALL:
-			handle_list_all(r, imsg, uidl);
+			handle_list_all(r, imsg);
 			break;
 		case IMSG_MAILDROP_UPDATE:
 			handle_update(r, imsg);
@@ -602,36 +599,28 @@ handle_list(struct session *s, struct imsg *imsg)
 	io_set_write(&s->io);
 }
 
-/* DELEted msg's hash and sz will be zero, ignore them */
+/* List terminal is indicated by hash being empty string or sz = 0 */
 static void
-handle_list_all(struct session *s, struct imsg *imsg, int uidl)
+handle_list_all(struct session *s, struct imsg *imsg)
 {
-	char 	*nhash = NULL;
-	size_t	datalen, i, item_sz, j, nitems, *nsz = NULL;
+	struct list_res	*res = imsg->data;
 
-	datalen = imsg->hdr.len - sizeof(imsg->hdr);
-	item_sz = (uidl) ? SHA1_DIGEST_STRING_LENGTH : sizeof(size_t);
-	nitems = datalen / item_sz;
-	if (uidl)
-		nhash = imsg->data;
+	if (res->uidl)
+		if (strlen(res->u.hash))
+			session_reply(s, "%s", res->u.hash);
+		else 
+			goto end;
 	else
-		nsz = imsg->data;
+		if (res->u.sz)
+			session_reply(s, "%zu", res->u.sz);
+		else
+			goto end;
 
-	session_reply(s, "+OK");
-	for (i = 0; i < nitems; i++) {
-		if (uidl) {
-			j = i * SHA1_DIGEST_STRING_LENGTH;
-			if (nhash[j])
-				session_reply(s, "%zu %s", i + 1, nhash + j);
-		} else {
-			if (nsz[i])
-				session_reply(s, "%zu %zu", i + 1, nsz[i]);
-		}
-	}
-
+	return;
+end:
 	session_reply(s, ".");
 	io_set_write(&s->io);
-
+	io_resume(&s->io, IO_PAUSE_IN);
 }
 
 static void

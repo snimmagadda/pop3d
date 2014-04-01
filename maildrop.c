@@ -38,9 +38,8 @@ static void retr(struct imsgev *, struct imsg *, struct m_backend *);
 static void dele(struct imsgev *, struct imsg *, struct m_backend *);
 static void rset(struct imsgev *, struct imsg *, struct m_backend *);
 static void list(struct imsgev *, struct imsg *, struct m_backend *);
-static void list_all(struct imsgev *, struct imsg *, struct m_backend *, int);
+static void list_all(struct imsgev *, struct imsg *, struct m_backend *);
 static void do_list(unsigned int, size_t *, char *, size_t);
-static void *do_list_all(int, size_t *);
 static struct m_backend *m_backend_lookup(enum m_type);
 static void sig_handler(int, short, void *);
 static void needfd(struct imsgev *);
@@ -188,7 +187,6 @@ static void
 session_imsgev(struct imsgev *iev, int code, struct imsg *imsg)
 {
 	struct m_backend	*mb = iev->data;
-	int			uidl = 0;		
 
 	switch (code) {
 	case IMSGEV_IMSG:
@@ -208,11 +206,8 @@ session_imsgev(struct imsgev *iev, int code, struct imsg *imsg)
 		case IMSG_MAILDROP_LIST:
 			list(iev, imsg, mb);
 			break;
-		case IMSG_MAILDROP_UIDLALL:
-			uidl = 1;
-			/* FALLTHROUGH */
 		case IMSG_MAILDROP_LISTALL:
-			list_all(iev, imsg, mb, uidl);
+			list_all(iev, imsg, mb);
 			break;
 		default:
 			logit(LOG_DEBUG, "%s: unexpected imsg %u",
@@ -312,16 +307,37 @@ list(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 }
 
 static void
-list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb, int uidl)
+list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 {
-	void	*res;
-	size_t	sz;
+	struct list_res	res;
+	size_t		i;
+	int		*uidl = imsg->data;
 
-	res = do_list_all(uidl, &sz);
-	/* XXX watchout for sz > MAX_IMSGSIZE */
-	imsgev_xcompose(iev,
-	    (uidl) ? IMSG_MAILDROP_UIDLALL : IMSG_MAILDROP_LISTALL,
-	    imsg->hdr.peerid, 0, -1, res, sz, "maildrop_list");
+	for (i = 0; i < m.nmsgs; i++) {
+		if (m.msgs_index[i]->flags & F_DELE)
+			continue;
+
+		res.idx = i;
+		res.uidl = *uidl;
+		if (*uidl) {
+			strlcpy(res.u.hash, m.msgs_index[i]->hash,
+			    sizeof(res.u.hash));
+		} else
+			res.u.sz = m.msgs_index[i]->sz;
+		
+		imsgev_xcompose(iev, IMSG_MAILDROP_LISTALL,
+		    imsg->hdr.peerid, 0, -1, &res, sizeof(res),
+		    "maildrop_list");
+	}
+	
+	/* terminal sentinel: hash = "" and sz = 0 */
+	if (*uidl)
+		strlcpy(res.u.hash, "", sizeof(res.u.hash));
+	else
+		res.u.sz = 0;
+
+	imsgev_xcompose(iev, IMSG_MAILDROP_LISTALL, imsg->hdr.peerid,
+	    0, -1, &res, sizeof(res), "maildrop_list");
 }
 
 static void
@@ -335,43 +351,6 @@ do_list(unsigned int idx, size_t *sz, char *hash, size_t hash_sz)
 
 	*sz = m.msgs_index[idx]->sz;
 	strlcpy(hash, m.msgs_index[idx]->hash, hash_sz);
-}
-
-static void *
-do_list_all(int uidl, size_t *sz)
-{
-	size_t	i, j, *nsz = NULL;
-	char	*nhash = NULL;
-
-	if (uidl) {
-		nhash = xcalloc(m.nmsgs, SHA1_DIGEST_STRING_LENGTH, "list_all");
-	} else
-		nsz = xcalloc(m.nmsgs, sizeof(size_t), "list_all");
-
-	for (i = 0; i < m.nmsgs; i++) {
-			
-		if (uidl) {
-			j = i * SHA1_DIGEST_STRING_LENGTH;
-			if (m.msgs_index[i]->flags & F_DELE)
-				nhash[j] = '\0';
-			else
-				strlcpy(nhash + j, m.msgs_index[i]->hash,
-			    	    SHA1_DIGEST_STRING_LENGTH);
-		} else {
-			if (m.msgs_index[i]->flags & F_DELE)
-				nsz[i] = 0;
-			else
-				nsz[i] = m.msgs_index[i]->sz;
-		}
-	}
-
-	if (uidl) {
-		*sz = m.nmsgs * SHA1_DIGEST_STRING_LENGTH;
-		return (nhash);
-	} else {
-		*sz = m.nmsgs * sizeof(size_t);
-		return (nsz);
-	}
 }
 
 static void

@@ -143,6 +143,7 @@ expand(char *dst, const char *src, size_t dst_sz, struct passwd *pw)
 	size_t	i = 0, r;
 	int	c;
 
+	memset(dst, 0, dst_sz);
 	while ((c = *src++)) {
 		if (i >= dst_sz)
 			break;

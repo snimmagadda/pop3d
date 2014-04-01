@@ -1,0 +1,86 @@
+.\" Copyright (c) Sunil Nimmagadda <sunil@nimmagadda.net>
+.\"
+.\" Permission to use, copy, modify, and distribute this software for any
+.\" purpose with or without fee is hereby granted, provided that the above
+.\" copyright notice and this permission notice appear in all copies.
+.\"
+.\" THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\" WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\" MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\" ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\" WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\" ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\" OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: March 26 2014 $
+.Dt POP3D 8
+.Os
+.Sh NAME
+.Nm pop3d
+.Nd Post Office Protocol (POP3) daemon.
+.Sh SYNOPSIS
+.Nm
+.Op Fl d
+.Op Fl p Ar path
+.Op Fl t Ar type
+.Sh DESCRIPTION
+.Nm
+daemon implements Post Office Protocol (Version 3) as specified in
+RFC 1939 as well as POP3S and STARTTLS extensions.
+.Pp
+.Nm
+binds to 110(POP3), 995(POP3S) ports and operates on local mailboxes on
+behalf of its remote users.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl d
+Do not daemonize. If this option is specified,
+.Nm
+will run in foreground and log to
+.Em stderr .
+.It Fl p
+Path to the maildrop. Defaults to /var/mail/%u in case of mbox and 
+~/Maildir in case of maildir.
+.Nm
+expands '~' to user's home dir
+and '%u' to user's name if specified in the path.
+.It Fl t
+Specify maildrop type. Options are mbox and maildir. Defaults to mbox.
+.El
+.Sh FILES
+.Bl -tag -width "/etc/ssl/private/server.key" -compact
+.It Pa ~/maildir
+.It Pa /var/mail/%u
+User maildrops
+.Pp
+.It /etc/ssl/server.crt
+.It /etc/ssl/private/server.key
+Location of SSL certificate and key
+.Sh SEE ALSO
+.Xr smtpd 8 ,
+.Xr ssl 8
+.Sh STANDARDS
+.Rs
+.%A J. Myers
+.%A M. Rose
+.%D May 1996
+.%R RFC 1939
+.%T Post Office Protocol \(en Version 3
+.Re
+.Pp
+.Rs
+.%A C. Newman
+.%D June 1999
+.%R RFC 2595
+.%T Using TLS with IMAP, POP3 and ACAP
+.Re
+.Pp
+.Rs
+.%A A. Melnikov
+.%A C. Newman
+.%A M. Yevstifeyev
+.%D August 2011
+.%R draft-melnikov-pop3-over-tls-02
+.Sh CAVEATS
+POP3 authenticates using cleartext passwords on 110(POP3) port.

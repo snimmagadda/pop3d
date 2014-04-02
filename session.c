@@ -605,14 +605,15 @@ handle_list_all(struct session *s, struct imsg *imsg)
 {
 	struct list_res	*res = imsg->data;
 
+	res->idx += 1;	/* POP3 index is 1 based */
 	if (res->uidl)
 		if (strlen(res->u.hash))
-			session_reply(s, "%s", res->u.hash);
+			session_reply(s, "%zu %s", res->idx, res->u.hash);
 		else 
 			goto end;
 	else
 		if (res->u.sz)
-			session_reply(s, "%zu", res->u.sz);
+			session_reply(s, "%zu %zu", res->idx, res->u.sz);
 		else
 			goto end;
 

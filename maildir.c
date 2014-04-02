@@ -101,7 +101,7 @@ init(struct mdrop *m, size_t *nmsgs, size_t *sz)
 		SHA1Init(&ctx);
 		while (( len = read(msg_fd, buf, sizeof(buf))) > 0) {
 			SHA1Update(&ctx, (u_int8_t *)buf, len);
-			for (C = buf;len--; ++C)
+			for (C = buf; len--; ++C)
 				if (*C == '\n')
 					msg->nlines += 1;
 		}
@@ -176,6 +176,7 @@ retr(struct mdrop *m, unsigned int idx, size_t *nlines, size_t *offset)
 	int	fd, r;
 
 	*offset = 0;
+	*nlines = m->msgs_index[idx]->nlines;
 	r = snprintf(buf, sizeof(buf), "cur/%s", m->msgs_index[idx]->u.fname);
 	if ((u_int)r >= sizeof(buf)) {
 		logit(LOG_WARNING, "path too long");

@@ -292,6 +292,19 @@ list(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 }
 
 static void
+do_list(unsigned int idx, size_t *sz, char *hash, size_t hash_sz)
+{
+	if (m.msgs_index[idx]->flags & F_DELE) {
+		*sz = 0;
+		strlcpy(hash, "", hash_sz);
+		return;
+	}
+
+	*sz = m.msgs_index[idx]->sz;
+	strlcpy(hash, m.msgs_index[idx]->hash, hash_sz);
+}
+
+static void
 list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 {
 	struct list_res	res;
@@ -323,19 +336,6 @@ list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 
 	imsgev_xcompose(iev, IMSG_MAILDROP_LISTALL, imsg->hdr.peerid,
 	    0, -1, &res, sizeof(res), "maildrop_list");
-}
-
-static void
-do_list(unsigned int idx, size_t *sz, char *hash, size_t hash_sz)
-{
-	if (m.msgs_index[idx]->flags & F_DELE) {
-		*sz = 0;
-		strlcpy(hash, "", hash_sz);
-		return;
-	}
-
-	*sz = m.msgs_index[idx]->sz;
-	strlcpy(hash, m.msgs_index[idx]->hash, hash_sz);
 }
 
 static void

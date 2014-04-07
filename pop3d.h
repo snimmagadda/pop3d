@@ -104,7 +104,7 @@ struct list_res {
 
 struct m_backend {
 	int (*init)(struct mdrop *, size_t *, size_t *);
-	int (*retr)(struct mdrop *, unsigned int, size_t *, size_t *);
+	int (*retr)(struct mdrop *, unsigned int, size_t *, long *);
 	int (*update)(struct mdrop *);
 };
 

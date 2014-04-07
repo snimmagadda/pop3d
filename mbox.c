@@ -30,7 +30,7 @@
 #include "pop3d.h"
 
 static int init(struct mdrop *, size_t *, size_t *);
-static int retr(struct mdrop *, unsigned int, size_t *, size_t *);
+static int retr(struct mdrop *, unsigned int, size_t *, long *);
 static int update(struct mdrop *);
 
 struct m_backend m_backend_mbox = {
@@ -113,7 +113,7 @@ init(struct mdrop *m, size_t *nmsgs, size_t *sz)
 }
 
 static int
-retr(struct mdrop *m, unsigned int idx, size_t *nlines, size_t *offset)
+retr(struct mdrop *m, unsigned int idx, size_t *nlines, long *offset)
 {
 	if (m->msgs_index[idx]->flags & F_DELE)
 		return (-1);

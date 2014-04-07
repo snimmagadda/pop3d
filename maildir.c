@@ -30,7 +30,7 @@
 #include "pop3d.h"
 
 static int init(struct mdrop *, size_t *, size_t *);
-static int retr(struct mdrop *, unsigned int, size_t *, size_t *);
+static int retr(struct mdrop *, unsigned int, size_t *, long *);
 static int update(struct mdrop *);
 static int new_to_cur(struct mdrop *);
 static int msgcmp(struct msg *, struct msg *);
@@ -51,7 +51,7 @@ init(struct mdrop *m, size_t *nmsgs, size_t *sz)
 {
 	SHA1_CTX	ctx;
 	struct stat	sb;
-	char		buf[MAXBSIZE];
+	u_char		buf[MAXBSIZE];
 	DIR		*dirp;
 	struct dirent	*dp;
 	struct msg	*msg;
@@ -170,7 +170,7 @@ new_to_cur(struct mdrop *m)
 }
 
 static int
-retr(struct mdrop *m, unsigned int idx, size_t *nlines, size_t *offset)
+retr(struct mdrop *m, unsigned int idx, size_t *nlines, long *offset)
 {
 	char	buf[MAXPATHLEN];
 	int	fd, r;

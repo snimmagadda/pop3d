@@ -70,7 +70,7 @@ main(int argc, char *argv[])
 		case 't':
 			if ((mtype = m_type(optarg)) == -1)
 				errx(1, "%s invalid argument", optarg);
-			if (mtype == M_MAILDIR)
+			if (mtype == M_MAILDIR && strcmp(mpath, MBOX_PATH) == 0)
 				mpath = MAILDIR_PATH;
 			mtype_str = optarg;
 			break;

@@ -47,7 +47,7 @@ static void sig_handler(int, short, void *);
 struct imsgev		iev_pop3d;
 void			*ssl_ctx;
 
-pid_t
+void
 pop3_main(int pair[2], struct passwd *pw)
 {
 	extern struct session_tree	sessions;
@@ -59,7 +59,7 @@ pop3_main(int pair[2], struct passwd *pw)
 		fatal("pop3e: fork");
 
 	if (pid > 0)
-		return (pid);
+		return;
 
 	close(pair[0]);
 	setproctitle("pop3 engine");

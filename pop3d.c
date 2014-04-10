@@ -50,6 +50,7 @@ static struct imsgev	iev_pop3e;
 static pid_t		pop3e_pid;
 static const char	*mpath = MBOX_PATH;
 static int		mtype = M_MBOX;
+static int		afamily = AF_UNSPEC;
 
 int
 main(int argc, char *argv[])
@@ -59,8 +60,14 @@ main(int argc, char *argv[])
 	const char	*mtype_str = "mbox";
 	int		ch, d = 0, pair[2];
 
-	while ((ch = getopt(argc, argv, "dp:t:")) != -1) {
+	while ((ch = getopt(argc, argv, "dp:t:46")) != -1) {
 		switch (ch) {
+		case '4':
+			afamily = AF_INET;
+			break;
+		case '6':
+			afamily = AF_INET6;
+			break;
 		case 'd':
 			d = 1;
 			break;
@@ -91,7 +98,7 @@ main(int argc, char *argv[])
 	if (!d && daemon(1, 0) == -1)
 		fatal("failed to daemonize");
 
-	if (socketpair(AF_UNIX, SOCK_STREAM, PF_UNSPEC, pair) == -1)
+	if (socketpair(AF_UNIX, SOCK_STREAM, AF_UNSPEC, pair) == -1)
 		fatal("socketpair");
 
 	set_nonblocking(pair[0]);
@@ -99,7 +106,7 @@ main(int argc, char *argv[])
 	if ((pw = getpwnam(POP3D_USER)) == NULL)
 		fatalx("main: getpwnam " POP3D_USER);
 
-	pop3e_pid = pop3_main(pair, pw);
+	pop3e_pid = pop3_main(pair, afamily, pw);
 	close(pair[1]);
 	setproctitle("[priv]");
 	logit(LOG_INFO, "pop3d ready; type:%s, path:%s", mtype_str, mpath);

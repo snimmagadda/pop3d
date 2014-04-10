@@ -47,8 +47,7 @@ static enum m_type m_type(const char *);
 static void usage(void);
 
 static struct imsgev	iev_pop3e;
-static pid_t		pop3e_pid;
-static const char	*mpath = MBOX_PATH;
+static const char	*mpath;
 static int		mtype = M_MBOX;
 static int		afamily = AF_UNSPEC;
 
@@ -57,7 +56,7 @@ main(int argc, char *argv[])
 {
 	struct passwd	*pw;
 	struct event	ev_sigint, ev_sigterm, ev_sighup, ev_sigchld;
-	const char	*mtype_str = "mbox";
+	const char	*path = NULL, *mtype_str = "mbox";
 	int		ch, d = 0, pair[2];
 
 	while ((ch = getopt(argc, argv, "dp:t:46")) != -1) {
@@ -72,13 +71,11 @@ main(int argc, char *argv[])
 			d = 1;
 			break;
 		case 'p':
-			mpath = optarg;
+			path = optarg;
 			break;
 		case 't':
 			if ((mtype = m_type(optarg)) == -1)
 				errx(1, "%s invalid argument", optarg);
-			if (mtype == M_MAILDIR)
-				mpath = MAILDIR_PATH;
 			mtype_str = optarg;
 			break;
 		default:
@@ -90,6 +87,11 @@ main(int argc, char *argv[])
 	argv += optind;
 	if (argc > 0 || *argv)
 		usage();
+
+	if (path)
+		mpath = path;
+	else
+		mpath = (mtype == M_MAILDIR) ? MAILDIR_PATH : MBOX_PATH;
 
 	log_init(d);
 	if (geteuid())
@@ -106,7 +108,7 @@ main(int argc, char *argv[])
 	if ((pw = getpwnam(POP3D_USER)) == NULL)
 		fatalx("main: getpwnam " POP3D_USER);
 
-	pop3e_pid = pop3_main(pair, afamily, pw);
+	pop3_main(pair, afamily, pw);
 	close(pair[1]);
 	setproctitle("[priv]");
 	logit(LOG_INFO, "pop3d ready; type:%s, path:%s", mtype_str, mpath);
@@ -210,8 +212,9 @@ sig_handler(int sig, short event, void *arg)
 		event_loopexit(NULL);
 		break;
 	case SIGCHLD:
-		if (waitpid(pop3e_pid, &status, WNOHANG) > 0)
-			if (WIFEXITED(status) || WIFSIGNALED(status)) {
+		if (waitpid(WAIT_ANY, &status, WNOHANG) > 0)
+			if ((WIFEXITED(status) && WEXITSTATUS(status) != 0) ||
+			    WIFSIGNALED(status)) {
 				logit(LOG_ERR, "Lost pop3 engine");
 				event_loopexit(NULL);
 			}

@@ -38,7 +38,7 @@
 
 static void auth_response(struct session *, int);
 static void pop3_accept(int, short, void *);
-static void pop3_listen(const char *);
+static void pop3_listen(const char *, int);
 static void pop3_pause(int, short, void *);
 static void pop3d_imsgev(struct imsgev *, int, struct imsg *);
 static void needfd(struct imsgev *);
@@ -48,7 +48,7 @@ struct imsgev		iev_pop3d;
 void			*ssl_ctx;
 
 pid_t
-pop3_main(int pair[2], struct passwd *pw)
+pop3_main(int pair[2], int afamily, struct passwd *pw)
 {
 	extern struct session_tree	sessions;
 	struct event			ev_sigint, ev_sigterm;
@@ -70,12 +70,12 @@ pop3_main(int pair[2], struct passwd *pw)
 	signal_add(&ev_sigint, NULL);
 	signal_add(&ev_sigterm, NULL);
 	imsgev_init(&iev_pop3d, pair[1], NULL, pop3d_imsgev, needfd);
-	pop3_listen("pop3");
+	pop3_listen("pop3", afamily);
 
 	ssl_init();
 	if ((ssl_ctx = ssl_setup()) == NULL)
 		fatal("ssl_setup failed");
-	pop3_listen("pop3s");
+	pop3_listen("pop3s", afamily);
 
 	if (chroot(pw->pw_dir) == -1 || chdir("/") == -1)
 		fatal("chroot");
@@ -93,7 +93,7 @@ pop3_main(int pair[2], struct passwd *pw)
 }
 
 static void
-pop3_listen(const char *port)
+pop3_listen(const char *port, int afamily)
 {
 	struct listener	*l = NULL;
 	struct addrinfo	hints, *res, *res0;
@@ -101,7 +101,7 @@ pop3_listen(const char *port)
 	const char	*cause = NULL;
 
 	memset(&hints, 0, sizeof(hints));
-	hints.ai_family = PF_UNSPEC;
+	hints.ai_family = afamily;
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 	error = getaddrinfo(NULL, port, &hints, &res0);

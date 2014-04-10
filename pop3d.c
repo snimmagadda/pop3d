@@ -47,7 +47,6 @@ static enum m_type m_type(const char *);
 static void usage(void);
 
 static struct imsgev	iev_pop3e;
-static pid_t		pop3e_pid;
 static const char	*mpath;
 static int		mtype = M_MBOX;
 
@@ -102,7 +101,7 @@ main(int argc, char *argv[])
 	if ((pw = getpwnam(POP3D_USER)) == NULL)
 		fatalx("main: getpwnam " POP3D_USER);
 
-	pop3e_pid = pop3_main(pair, pw);
+	pop3_main(pair, pw);
 	close(pair[1]);
 	setproctitle("[priv]");
 	logit(LOG_INFO, "pop3d ready; type:%s, path:%s", mtype_str, mpath);
@@ -206,8 +205,9 @@ sig_handler(int sig, short event, void *arg)
 		event_loopexit(NULL);
 		break;
 	case SIGCHLD:
-		if (waitpid(pop3e_pid, &status, WNOHANG) > 0)
-			if (WIFEXITED(status) || WIFSIGNALED(status)) {
+		if (waitpid(WAIT_ANY, &status, WNOHANG) > 0)
+			if ((WIFEXITED(status) && WEXITSTATUS(status) != 0) ||
+			    WIFSIGNALED(status)) {
 				logit(LOG_ERR, "Lost pop3 engine");
 				event_loopexit(NULL);
 			}

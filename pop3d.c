@@ -47,7 +47,6 @@ static enum m_type m_type(const char *);
 static void usage(void);
 
 static struct imsgev	iev_pop3e;
-static pid_t		pop3e_pid;
 static const char	*mpath = MBOX_PATH;
 static int		mtype = M_MBOX;
 
@@ -99,7 +98,7 @@ main(int argc, char *argv[])
 	if ((pw = getpwnam(POP3D_USER)) == NULL)
 		fatalx("main: getpwnam " POP3D_USER);
 
-	pop3e_pid = pop3_main(pair, pw);
+	pop3_main(pair, pw);
 	close(pair[1]);
 	setproctitle("[priv]");
 	logit(LOG_INFO, "pop3d ready; type:%s, path:%s", mtype_str, mpath);

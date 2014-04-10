@@ -48,7 +48,7 @@ static void usage(void);
 
 static struct imsgev	iev_pop3e;
 static pid_t		pop3e_pid;
-static const char	*mpath = MBOX_PATH;
+static const char	*mpath;
 static int		mtype = M_MBOX;
 
 int
@@ -56,7 +56,7 @@ main(int argc, char *argv[])
 {
 	struct passwd	*pw;
 	struct event	ev_sigint, ev_sigterm, ev_sighup, ev_sigchld;
-	const char	*mtype_str = "mbox";
+	const char	*path = NULL, *mtype_str = "mbox";
 	int		ch, d = 0, pair[2];
 
 	while ((ch = getopt(argc, argv, "dp:t:")) != -1) {
@@ -65,13 +65,11 @@ main(int argc, char *argv[])
 			d = 1;
 			break;
 		case 'p':
-			mpath = optarg;
+			path = optarg;
 			break;
 		case 't':
 			if ((mtype = m_type(optarg)) == -1)
 				errx(1, "%s invalid argument", optarg);
-			if (mtype == M_MAILDIR)
-				mpath = MAILDIR_PATH;
 			mtype_str = optarg;
 			break;
 		default:
@@ -83,6 +81,11 @@ main(int argc, char *argv[])
 	argv += optind;
 	if (argc > 0 || *argv)
 		usage();
+
+	if (path)
+		mpath = path;
+	else
+		mpath = (mtype == M_MAILDIR) ? MAILDIR_PATH : MBOX_PATH;
 
 	log_init(d);
 	if (geteuid())

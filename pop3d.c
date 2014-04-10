@@ -210,8 +210,9 @@ sig_handler(int sig, short event, void *arg)
 		event_loopexit(NULL);
 		break;
 	case SIGCHLD:
-		if (waitpid(pop3e_pid, &status, WNOHANG) > 0)
-			if (WIFEXITED(status) || WIFSIGNALED(status)) {
+		if (waitpid(WAIT_ANY, &status, WNOHANG) > 0)
+			if ((WIFEXITED(status) && WEXITSTATUS(status) != 0) ||
+			    WIFSIGNALED(status)) {
 				logit(LOG_ERR, "Lost pop3 engine");
 				event_loopexit(NULL);
 			}

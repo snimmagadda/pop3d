@@ -143,7 +143,7 @@ struct session {
 };
 
 /* pop3e.c */
-void pop3_main(int [2], struct passwd *);
+void pop3_main(int [2], int, struct passwd *);
 
 /* session.c */
 void session_init(struct listener *, int);

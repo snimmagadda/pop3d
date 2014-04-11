@@ -138,7 +138,6 @@ struct session {
 	size_t			nmsgs;
 	struct listener		*l;
 	uint32_t		id;
-	int			sock;
 	int			flags;
 	enum state		state;
 };

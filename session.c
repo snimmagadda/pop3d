@@ -110,11 +110,10 @@ session_init(struct listener *l, int fd)
 	io_init(&s->io, fd, s, session_io, &s->iobuf);
 	io_set_timeout(&s->io, TIMEOUT);
 	s->id = arc4random();
-	s->sock = fd;
 	s->state = AUTH;
 	if (s->l->flags & POP3S) {
 		s->flags |= POP3S;
-		ssl = pop3s_init(ssl_ctx, s->sock);
+		ssl = pop3s_init(ssl_ctx, fd);
 		io_set_read(&s->io);
 		io_start_tls(&s->io, ssl);
 		return;
@@ -283,7 +282,7 @@ auth_command(struct session *s, int cmd, char *args)
 		iobuf_flush(&s->iobuf, s->io.sock);
 		/* add back when IO_TLSREADY. */
 		SPLAY_REMOVE(session_tree, &sessions, s);
-		ssl = pop3s_init(ssl_ctx, s->sock);
+		ssl = pop3s_init(ssl_ctx, s->io.sock);
 		io_set_read(&s->io);
 		io_start_tls(&s->io, ssl);
 		return;

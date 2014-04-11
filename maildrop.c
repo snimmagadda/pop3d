@@ -328,6 +328,7 @@ list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 		    "maildrop_list");
 	}
 	
+	res.uidl = *uidl;
 	/* terminal sentinel: hash = "" and sz = 0 */
 	if (*uidl)
 		strlcpy(res.u.hash, "", sizeof(res.u.hash));

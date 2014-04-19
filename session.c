@@ -321,8 +321,8 @@ auth_request(struct session *s)
 	struct auth_req		req;
 
 	memset(&req, 0, sizeof(req));
-	strlcpy(req.user, s->user, sizeof(req.user));
-	strlcpy(req.pass, s->pass, sizeof(req.pass));
+	(void)strlcpy(req.user, s->user, sizeof(req.user));
+	(void)strlcpy(req.pass, s->pass, sizeof(req.pass));
 	imsgev_xcompose(&iev_pop3d, IMSG_AUTH, s->id, 0, -1,
 	    &req, sizeof(req), "auth_request");
 }

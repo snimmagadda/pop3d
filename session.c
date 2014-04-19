@@ -675,7 +675,7 @@ strstate(enum state state)
 	CASE(TRANSACTION);
 	CASE(UPDATE);
 	default:
-		snprintf(buf, sizeof(buf), "%d ???", state);
+		(void)snprintf(buf, sizeof(buf), "%d ???", state);
 		return (buf);
 	}
 }

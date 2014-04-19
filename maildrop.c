@@ -282,7 +282,7 @@ list(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 	do_list(req->idx, &sz, hash, sizeof(hash));
 	res.uidl = req->uidl;
 	if (res.uidl)
-		strlcpy(res.u.hash, hash, sizeof(res.u.hash));
+		(void)strlcpy(res.u.hash, hash, sizeof(res.u.hash));
 	else
 		res.u.sz = sz;
 
@@ -296,12 +296,12 @@ do_list(unsigned int idx, size_t *sz, char *hash, size_t hash_sz)
 {
 	if (m.msgs_index[idx]->flags & F_DELE) {
 		*sz = 0;
-		strlcpy(hash, "", hash_sz);
+		(void)strlcpy(hash, "", hash_sz);
 		return;
 	}
 
 	*sz = m.msgs_index[idx]->sz;
-	strlcpy(hash, m.msgs_index[idx]->hash, hash_sz);
+	(void)strlcpy(hash, m.msgs_index[idx]->hash, hash_sz);
 }
 
 static void
@@ -318,7 +318,7 @@ list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 		res.idx = i;
 		res.uidl = *uidl;
 		if (*uidl) {
-			strlcpy(res.u.hash, m.msgs_index[i]->hash,
+			(void)strlcpy(res.u.hash, m.msgs_index[i]->hash,
 			    sizeof(res.u.hash));
 		} else
 			res.u.sz = m.msgs_index[i]->sz;
@@ -331,7 +331,7 @@ list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 	res.uidl = *uidl;
 	/* terminal sentinel: hash = "" and sz = 0 */
 	if (*uidl)
-		strlcpy(res.u.hash, "", sizeof(res.u.hash));
+		(void)strlcpy(res.u.hash, "", sizeof(res.u.hash));
 	else
 		res.u.sz = 0;
 

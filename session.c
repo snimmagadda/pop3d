@@ -290,7 +290,7 @@ auth_command(struct session *s, int cmd, char *args)
 		capa(s);
 		break;
 	case CMD_USER:
-		strlcpy(s->user, args, sizeof(s->user));
+		(void)strlcpy(s->user, args, sizeof(s->user));
 		session_reply(s, "%s", "+OK");
 		break;
 	case CMD_PASS:
@@ -298,7 +298,7 @@ auth_command(struct session *s, int cmd, char *args)
 			session_reply(s, "%s", "-ERR no USER specified");
 			break;
 		}
-		strlcpy(s->pass, args, sizeof(s->pass));
+		(void)strlcpy(s->pass, args, sizeof(s->pass));
 		auth_request(s);
 		return;
 	case CMD_QUIT:

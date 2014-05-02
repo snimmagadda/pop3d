@@ -1,5 +1,4 @@
-/*	$OpenBSD: ioev.c,v 1.1 2014/01/27 15:49:52 sunil Exp $	*/
-
+/*	$OpenBSD: ioev.c,v 1.18 2014/04/19 17:36:54 gilles Exp $	*/
 /*      
  * Copyright (c) 2012 Eric Faurot <eric@openbsd.org>
  *
@@ -89,7 +88,7 @@ io_strio(struct io *io)
 	ssl[0] = '\0';
 #ifdef IO_SSL
 	if (io->ssl) {
-		snprintf(ssl, sizeof ssl, " ssl=%s:%s:%i",
+		(void)snprintf(ssl, sizeof ssl, " ssl=%s:%s:%d",
 		    SSL_get_cipher_version(io->ssl),
 		    SSL_get_cipher_name(io->ssl),
 		    SSL_get_cipher_bits(io->ssl, NULL));
@@ -97,12 +96,12 @@ io_strio(struct io *io)
 #endif
 
 	if (io->iobuf == NULL)
-		snprintf(buf, sizeof buf,
-		    "<io:%p fd=%i to=%i fl=%s%s>",
+		(void)snprintf(buf, sizeof buf,
+		    "<io:%p fd=%d to=%d fl=%s%s>",
 		    io, io->sock, io->timeout, io_strflags(io->flags), ssl);
 	else
-		snprintf(buf, sizeof buf,
-		    "<io:%p fd=%i to=%i fl=%s%s ib=%zu ob=%zu>",
+		(void)snprintf(buf, sizeof buf,
+		    "<io:%p fd=%d to=%d fl=%s%s ib=%zu ob=%zu>",
 		    io, io->sock, io->timeout, io_strflags(io->flags), ssl,
 		    io_pending(io), io_queued(io));
 
@@ -126,7 +125,7 @@ io_strevent(int evt)
 	CASE(IO_TIMEOUT);
 	CASE(IO_ERROR);
 	default:
-		snprintf(buf, sizeof(buf), "IO_? %i", evt);
+		(void)snprintf(buf, sizeof(buf), "IO_? %d", evt);
 		return buf;
 	}
 }
@@ -153,7 +152,7 @@ io_set_linger(int fd, int linger)
 {
 	struct linger    l;
 
-	bzero(&l, sizeof(l));
+	memset(&l, 0, sizeof(l));
 	l.l_onoff = linger ? 1 : 0;
 	l.l_linger = linger;
 	if (setsockopt(fd, SOL_SOCKET, SO_LINGER, &l, sizeof(l)) == -1)
@@ -259,13 +258,13 @@ io_clear(struct io *io)
 
 #ifdef IO_SSL
 	if (io->ssl) {
-		SSL_shutdown(io->ssl);
 		SSL_free(io->ssl);
 		io->ssl = NULL;
 	}
 #endif
 
-	event_del(&io->ev);
+	if (event_initialized(&io->ev))
+		event_del(&io->ev);
 	if (io->sock != -1) {
 		close(io->sock);
 		io->sock = -1;
@@ -298,7 +297,7 @@ io_release(struct io *io)
 void
 io_set_timeout(struct io *io, int msec)
 {
-	io_debug("io_set_timeout(%p, %i)\n", io, msec);
+	io_debug("io_set_timeout(%p, %d)\n", io, msec);
 
 	io->timeout = msec;
 }
@@ -410,7 +409,8 @@ io_reset(struct io *io, short events, void (*dispatch)(int, short, void*))
 	 */
 	io->flags |= IO_RESET;
 
-	event_del(&io->ev);
+	if (event_initialized(&io->ev))
+		event_del(&io->ev);
 
 	/*
 	 * The io is paused by the user, so we don't want the timeout to be
@@ -451,23 +451,23 @@ io_strflags(int flags)
 
 	switch (flags & IO_RW) {
 	case 0:
-		strlcat(buf, "rw", sizeof buf);
+		(void)strlcat(buf, "rw", sizeof buf);
 		break;
 	case IO_READ:
-		strlcat(buf, "R", sizeof buf);
+		(void)strlcat(buf, "R", sizeof buf);
 		break;
 	case IO_WRITE:
-		strlcat(buf, "W", sizeof buf);
+		(void)strlcat(buf, "W", sizeof buf);
 		break;
 	case IO_RW:
-		strlcat(buf, "RW", sizeof buf);
+		(void)strlcat(buf, "RW", sizeof buf);
 		break;
 	}
 
 	if (flags & IO_PAUSE_IN)
-		strlcat(buf, ",F_PI", sizeof buf);
+		(void)strlcat(buf, ",F_PI", sizeof buf);
 	if (flags & IO_PAUSE_OUT)
-		strlcat(buf, ",F_PO", sizeof buf);
+		(void)strlcat(buf, ",F_PO", sizeof buf);
 
 	return buf;
 }
@@ -483,46 +483,46 @@ io_evstr(short ev)
 	buf[0] = '\0';
 
 	if (ev == 0) {
-		strlcat(buf, "<NONE>", sizeof(buf));
+		(void)strlcat(buf, "<NONE>", sizeof(buf));
 		return buf;
 	}
 
 	if (ev & EV_TIMEOUT) {
-		strlcat(buf, "EV_TIMEOUT", sizeof(buf));
+		(void)strlcat(buf, "EV_TIMEOUT", sizeof(buf));
 		ev &= ~EV_TIMEOUT;
 		n++;
 	}
 
 	if (ev & EV_READ) {
 		if (n)
-			strlcat(buf, "|", sizeof(buf));
-		strlcat(buf, "EV_READ", sizeof(buf));
+			(void)strlcat(buf, "|", sizeof(buf));
+		(void)strlcat(buf, "EV_READ", sizeof(buf));
 		ev &= ~EV_READ;
 		n++;
 	}
 
 	if (ev & EV_WRITE) {
 		if (n)
-			strlcat(buf, "|", sizeof(buf));
-		strlcat(buf, "EV_WRITE", sizeof(buf));
+			(void)strlcat(buf, "|", sizeof(buf));
+		(void)strlcat(buf, "EV_WRITE", sizeof(buf));
 		ev &= ~EV_WRITE;
 		n++;
 	}
 
 	if (ev & EV_SIGNAL) {
 		if (n)
-			strlcat(buf, "|", sizeof(buf));
-		strlcat(buf, "EV_SIGNAL", sizeof(buf));
+			(void)strlcat(buf, "|", sizeof(buf));
+		(void)strlcat(buf, "EV_SIGNAL", sizeof(buf));
 		ev &= ~EV_SIGNAL;
 		n++;
 	}
 
 	if (ev) {
 		if (n)
-			strlcat(buf, "|", sizeof(buf));
-		strlcat(buf, "EV_?=0x", sizeof(buf));
-		snprintf(buf2, sizeof(buf2), "%hx", ev);
-		strlcat(buf, buf2, sizeof(buf));
+			(void)strlcat(buf, "|", sizeof(buf));
+		(void)strlcat(buf, "EV_?=0x", sizeof(buf));
+		(void)snprintf(buf2, sizeof(buf2), "%hx", ev);
+		(void)strlcat(buf, buf2, sizeof(buf));
 	}
 
 	return buf;
@@ -814,7 +814,7 @@ again:
 		io_callback(io, IO_ERROR);
 		break;
 	default:
-		io_debug("io_dispatch_read_ssl(...) -> r=%i\n", n);
+		io_debug("io_dispatch_read_ssl(...) -> r=%d\n", n);
 		io_callback(io, IO_DATAIN);
 		if (current == io && IO_READING(io) && SSL_pending(io->ssl))
 			goto again;
@@ -861,7 +861,7 @@ io_dispatch_write_ssl(int fd, short event, void *humppa)
 		io_callback(io, IO_ERROR);
 		break;
 	default:
-		io_debug("io_dispatch_write_ssl(...) -> w=%i\n", n);
+		io_debug("io_dispatch_write_ssl(...) -> w=%d\n", n);
 		w2 = io_queued(io);
 		if (w > io->lowat && w2 <= io->lowat)
 			io_callback(io, IO_LOWAT);

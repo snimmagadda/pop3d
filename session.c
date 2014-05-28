@@ -22,6 +22,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <syslog.h>
 #include <unistd.h>
 
@@ -147,7 +148,6 @@ session_close(struct session *s, int flush)
 	iobuf_clear(&entry->iobuf);
 	io_clear(&entry->io);
 	imsgev_clear(&entry->iev_maildrop);
-	imsgev_close(&entry->iev_maildrop);
 	logit(LOG_INFO, "%u: session closed", entry->id);
 	free(entry);
 }

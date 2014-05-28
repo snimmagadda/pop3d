@@ -201,7 +201,6 @@ sig_handler(int sig, short event, void *arg)
 	case SIGHUP:
 	case SIGTERM:
 		imsgev_clear(&iev_pop3e);
-		imsgev_close(&iev_pop3e);
 		event_loopexit(NULL);
 		break;
 	case SIGCHLD:

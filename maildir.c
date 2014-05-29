@@ -157,7 +157,7 @@ new_to_cur(struct mdrop *m)
 		    strcmp(dp->d_name, "..") == 0)
 			continue;
 
-		if(renameat(new_fd, dp->d_name, cur_fd, dp->d_name) == -1) {
+		if (renameat(new_fd, dp->d_name, cur_fd, dp->d_name) == -1) {
 			logit(LOG_CRIT, "maildir: renameat failed");
 			return (-1);
 		}

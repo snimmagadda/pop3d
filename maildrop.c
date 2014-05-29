@@ -322,12 +322,12 @@ list_all(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
 			    sizeof(res.u.hash));
 		} else
 			res.u.sz = m.msgs_index[i]->sz;
-		
+
 		imsgev_xcompose(iev, IMSG_MAILDROP_LISTALL,
 		    imsg->hdr.peerid, 0, -1, &res, sizeof(res),
 		    "maildrop_list");
 	}
-	
+
 	res.uidl = *uidl;
 	/* terminal sentinel: hash = "" and sz = 0 */
 	if (*uidl)

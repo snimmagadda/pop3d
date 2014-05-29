@@ -608,7 +608,7 @@ handle_list_all(struct session *s, struct imsg *imsg)
 	if (res->uidl)
 		if (strlen(res->u.hash))
 			session_reply(s, "%zu %s", res->idx, res->u.hash);
-		else 
+		else
 			goto end;
 	else
 		if (res->u.sz)

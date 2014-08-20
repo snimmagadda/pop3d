@@ -112,7 +112,7 @@ maildrop_init(uint32_t session_id, int pair[2], struct passwd *pw,
 	if (event_dispatch() < 0)
 		fatal("event_dispatch");
 
-	logit(LOG_INFO, "maildrop process exiting");
+	logit(LOG_INFO, "%zu: maildrop process exiting", session_id);
 	_exit(0);
 }
 

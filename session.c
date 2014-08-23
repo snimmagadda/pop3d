@@ -145,8 +145,8 @@ session_close(struct session *s, int flush)
 			iobuf_flush(&entry->iobuf, entry->io.sock);
 	}
 
-	iobuf_clear(&entry->iobuf);
 	io_clear(&entry->io);
+	iobuf_clear(&entry->iobuf);
 	imsgev_clear(&entry->iev_maildrop);
 	logit(LOG_INFO, "%u: session closed", entry->id);
 	free(entry);

@@ -436,7 +436,9 @@ get_list(struct session *s, unsigned int i, int uidl)
 void
 session_imsgev_init(struct session *s, int fd)
 {
-	imsgev_init(&s->iev_maildrop, fd, s, maildrop_imsgev, needfd);
+	imsgev_init(&s->iev_maildrop, fd, NULL, maildrop_imsgev, needfd);
+	imsgev_xcompose(&s->iev_maildrop, IMSG_MAILDROP_INIT, s->id, 0,
+	    -1, s->user, sizeof(s->user), "session_imsgev_init");
 }
 
 static void

@@ -47,8 +47,8 @@ static enum m_type m_type(const char *);
 static void usage(void);
 
 static struct imsgev	iev_pop3e;
-static const char	*mpath;
-static int		mtype = M_MBOX;
+const char		*mpath;
+int			mtype = M_MBOX;
 
 int
 main(int argc, char *argv[])
@@ -172,7 +172,7 @@ authenticate(struct imsgev *iev, struct imsg *imsg)
 	if ((pw = getpwnam(req->user)) == NULL)
 		fatalx("authenticate: getpwnam");
 
-	if (maildrop_setup(imsg->hdr.peerid, pair, pw, mtype, mpath) == -1) {
+	if (maildrop_setup(imsg->hdr.peerid, pair, pw) == -1) {
 		logit(LOG_INFO, "%u: unable to fork maildrop process",
 		    imsg->hdr.peerid);
 		pair[0] = -1;

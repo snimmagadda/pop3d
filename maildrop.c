@@ -48,8 +48,7 @@ static size_t expand(char *, const char *, size_t, struct passwd *);
 static struct mdrop m;
 
 pid_t
-maildrop_setup(uint32_t session_id, int pair[2], struct passwd *pw,
-    int type, const char *path)
+maildrop_setup(uint32_t session_id, int pair[2], struct passwd *pw)
 {
 	struct imsgev		iev_session;
 	struct event		ev_sigint, ev_sigterm;
@@ -59,6 +58,8 @@ maildrop_setup(uint32_t session_id, int pair[2], struct passwd *pw,
 	pid_t			pid;
 	mode_t			old_mask;
 	int			fd, flags, res = -1;
+	extern int		mtype;
+	extern const char	*mpath;
 
 	if ((pid = fork()) != 0)
 		return (pid);
@@ -70,14 +71,14 @@ maildrop_setup(uint32_t session_id, int pair[2], struct passwd *pw,
 
 	close(pair[0]);
 	setproctitle("maildrop");
-	if ((mb = m_backend_lookup(type)) == NULL)
+	if ((mb = m_backend_lookup(mtype)) == NULL)
 		fatalx("maildrop: invalid backend");
 
-	if (expand(buf, path, sizeof(buf), pw) >= sizeof(buf))
+	if (expand(buf, mpath, sizeof(buf), pw) >= sizeof(buf))
 		fatalx("maildrop: path truncation");
 
 	flags = O_CREAT;
-	if (type == M_MBOX)
+	if (mtype == M_MBOX)
 		flags |= O_RDWR;
 	else
 		flags |= O_RDONLY;

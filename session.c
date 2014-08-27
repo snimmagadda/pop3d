@@ -708,7 +708,7 @@ session_write(struct session *s, const char *data, size_t len)
 	if (data[len - 1] == '\n')
 		len -= 1;
 
-	if (data[len - 1] == '\r')
+	if (len && data[len - 1] == '\r')
 		len -= 1;
 
 	/* byte stuff "." if at beginning of line */

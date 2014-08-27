@@ -172,7 +172,7 @@ authenticate(struct imsgev *iev, struct imsg *imsg)
 	if ((pw = getpwnam(req->user)) == NULL)
 		fatalx("authenticate: getpwnam");
 
-	if (maildrop_init(imsg->hdr.peerid, pair, pw, mtype, mpath) == -1) {
+	if (maildrop_setup(imsg->hdr.peerid, pair, pw, mtype, mpath) == -1) {
 		logit(LOG_INFO, "%u: unable to fork maildrop process",
 		    imsg->hdr.peerid);
 		pair[0] = -1;

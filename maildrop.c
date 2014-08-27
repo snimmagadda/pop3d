@@ -48,7 +48,7 @@ static size_t expand(char *, const char *, size_t, struct passwd *);
 static struct mdrop m;
 
 pid_t
-maildrop_init(uint32_t session_id, int pair[2], struct passwd *pw,
+maildrop_setup(uint32_t session_id, int pair[2], struct passwd *pw,
     int type, const char *path)
 {
 	struct imsgev		iev_session;
@@ -176,6 +176,8 @@ session_imsgev(struct imsgev *iev, int code, struct imsg *imsg)
 	switch (code) {
 	case IMSGEV_IMSG:
 		switch (imsg->hdr.type) {
+		case IMSG_MAILDROP_INIT:
+			break;
 		case IMSG_MAILDROP_UPDATE:
 			update(iev, imsg, mb);
 			break;

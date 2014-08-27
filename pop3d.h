@@ -156,7 +156,7 @@ int session_cmp(struct session *, struct session *);
 SPLAY_PROTOTYPE(session_tree, session, entry, session_cmp);
 
 /* maildrop.c */
-pid_t maildrop_init(uint32_t, int [2], struct passwd *, int, const char *);
+pid_t maildrop_setup(uint32_t, int [2], struct passwd *, int, const char *);
 
 /* util.c */
 void set_nonblocking(int);

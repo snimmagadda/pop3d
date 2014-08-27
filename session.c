@@ -133,7 +133,7 @@ session_close(struct session *s, int flush)
 
 	entry = SPLAY_REMOVE(session_tree, &sessions,  s);
 	if (entry == NULL) {
-		 /* STARTTLS session was in progress and got interrupted */
+		/* STARTTLS session was in progress and got interrupted */
 		logit(LOG_DEBUG, "%u: not in tree", s->id);
 		entry = s;
 	}
@@ -436,7 +436,7 @@ get_list(struct session *s, unsigned int i, int uidl)
 void
 session_imsgev_init(struct session *s, int fd)
 {
-	imsgev_init(&s->iev_maildrop, fd, s, maildrop_imsgev, needfd);
+	imsgev_init(&s->iev_maildrop, fd, NULL, maildrop_imsgev, needfd);
 }
 
 static void

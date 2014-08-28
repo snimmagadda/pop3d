@@ -66,7 +66,7 @@ struct mdrop {
 	}				e;
 	size_t				nmsgs;
 	size_t				sz;
-	struct msg			**msgs_index; /* random access to msgs */
+	struct msg			**msgs_index; /* random access msgs */
 	int				fd;
 };
 

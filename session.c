@@ -133,7 +133,7 @@ session_close(struct session *s, int flush)
 
 	entry = SPLAY_REMOVE(session_tree, &sessions,  s);
 	if (entry == NULL) {
-		 /* STARTTLS session was in progress and got interrupted */
+		/* STARTTLS session was in progress and got interrupted */
 		logit(LOG_DEBUG, "%u: not in tree", s->id);
 		entry = s;
 	}

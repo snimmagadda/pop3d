@@ -147,8 +147,14 @@ session_close(struct session *s, int flush)
 
 	io_clear(&entry->io);
 	iobuf_clear(&entry->iobuf);
-	imsgev_clear(entry->iev_maildrop);
-	entry->iev_maildrop->terminate = 1;
+	 /* 
+	  * If the session hadn't made it to TRANSACTION
+	  * iev_maildrop is not inited.
+	  */
+	if (entry->iev_maildrop) {
+		imsgev_clear(entry->iev_maildrop);
+		entry->iev_maildrop->terminate = 1;
+	}
 	logit(LOG_INFO, "%u: session closed", entry->id);
 	free(entry);
 }
@@ -440,6 +446,8 @@ session_imsgev_init(struct session *s, int fd)
 	s->iev_maildrop = xcalloc(1, sizeof(struct imsgev),
 	    "session_imsgev_init");
 	imsgev_init(s->iev_maildrop, fd, NULL, maildrop_imsgev, needfd);
+	imsgev_xcompose(s->iev_maildrop, IMSG_MAILDROP_INIT, s->id, 0,
+	    -1, s->user, sizeof(s->user), "session_imsgev_init");
 }
 
 static void

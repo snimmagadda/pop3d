@@ -33,6 +33,7 @@
 #include "pop3d.h"
 
 static void session_imsgev(struct imsgev *, int, struct imsg *);
+static void maildrop_init(struct imsgev *, struct imsg *, struct m_backend *);
 static void update(struct imsgev *, struct imsg *, struct m_backend *);
 static void retr(struct imsgev *, struct imsg *, struct m_backend *);
 static void dele(struct imsgev *, struct imsg *, struct m_backend *);
@@ -48,17 +49,13 @@ static size_t expand(char *, const char *, size_t, struct passwd *);
 static struct mdrop m;
 
 pid_t
-maildrop_init(uint32_t session_id, int pair[2], struct passwd *pw,
-    int type, const char *path)
+maildrop_setup(uint32_t session_id, int pair[2], struct passwd *pw)
 {
 	struct imsgev		iev_session;
 	struct event		ev_sigint, ev_sigterm;
-	struct stats		stats;
 	struct m_backend	*mb;
-	char			buf[MAXPATHLEN];
 	pid_t			pid;
-	mode_t			old_mask;
-	int			fd, flags, res = -1;
+	extern int		mtype;
 
 	if ((pid = fork()) != 0)
 		return (pid);
@@ -70,45 +67,15 @@ maildrop_init(uint32_t session_id, int pair[2], struct passwd *pw,
 
 	close(pair[0]);
 	setproctitle("maildrop");
-	if ((mb = m_backend_lookup(type)) == NULL)
+	if ((mb = m_backend_lookup(mtype)) == NULL)
 		fatalx("maildrop: invalid backend");
 
-	if (expand(buf, path, sizeof(buf), pw) >= sizeof(buf))
-		fatalx("maildrop: path truncation");
-
-	flags = O_CREAT;
-	if (type == M_MBOX)
-		flags |= O_RDWR;
-	else
-		flags |= O_RDONLY;
-
-	old_mask = umask(S_IXUSR|S_IXGRP|S_IWOTH|S_IROTH|S_IXOTH);
-	if ((fd = open(buf, flags)) == -1)
-		logit(LOG_CRIT, "%zu: failed to open %s", session_id , buf);
-
-	if (fd != -1) {
-		m.fd = fd;
-		res = mb->init(&m, &stats.nmsgs, &stats.sz);
-	}
-
-	umask(old_mask);
 	event_init();
 	signal_set(&ev_sigint, SIGINT, sig_handler, NULL);
 	signal_set(&ev_sigterm, SIGTERM, sig_handler, NULL);
 	signal_add(&ev_sigint, NULL);
 	signal_add(&ev_sigterm, NULL);
 	imsgev_init(&iev_session, pair[1], mb, session_imsgev, needfd);
-
-	if (res == 0) {
-		imsgev_xcompose(&iev_session, IMSG_MAILDROP_INIT, session_id,
-		    0, -1, &stats, sizeof(struct stats), "maildrop_init");
-	} else {
-		logit(LOG_CRIT, "%zu: maildrop init failed %s",
-		    session_id, buf);
-		imsgev_xcompose(&iev_session, IMSG_MAILDROP_INIT, session_id,
-		    0, -1, NULL, 0, "maildrop_init");
-	}
-
 	if (event_dispatch() < 0)
 		fatal("event_dispatch");
 
@@ -176,6 +143,9 @@ session_imsgev(struct imsgev *iev, int code, struct imsg *imsg)
 	switch (code) {
 	case IMSGEV_IMSG:
 		switch (imsg->hdr.type) {
+		case IMSG_MAILDROP_INIT:
+			maildrop_init(iev, imsg, mb);
+			break;
 		case IMSG_MAILDROP_UPDATE:
 			update(iev, imsg, mb);
 			break;
@@ -208,6 +178,52 @@ session_imsgev(struct imsgev *iev, int code, struct imsg *imsg)
 	case IMSGEV_DONE:
 		event_loopexit(NULL);
 		break;
+	}
+}
+
+static void
+maildrop_init(struct imsgev *iev, struct imsg *imsg, struct m_backend *mb)
+{
+	struct stats		stats;
+	char			buf[MAXPATHLEN];
+	struct passwd		*pw;
+	extern const char	*mpath;
+	extern int		mtype;
+	mode_t			old_mask;
+	int			fd, flags, res = -1;
+	uint32_t		session_id = imsg->hdr.peerid;
+	const char		*user = imsg->data;
+
+	if ((pw = getpwnam(user)) == NULL)
+		fatalx("authenticate: getpwnam");
+
+	if (expand(buf, mpath, sizeof(buf), pw) >= sizeof(buf))
+		fatalx("maildrop: path truncation");
+
+	flags = O_CREAT;
+	if (mtype == M_MBOX)
+		flags |= O_RDWR;
+	else
+		flags |= O_RDONLY;
+
+	old_mask = umask(S_IXUSR|S_IXGRP|S_IWOTH|S_IROTH|S_IXOTH);
+	if ((fd = open(buf, flags)) == -1)
+		logit(LOG_CRIT, "%zu: failed to open %s", session_id , buf);
+
+	if (fd != -1) {
+		m.fd = fd;
+		res = mb->init(&m, &stats.nmsgs, &stats.sz);
+	}
+
+	umask(old_mask);
+	if (res == 0) {
+		imsgev_xcompose(iev, IMSG_MAILDROP_INIT, session_id,
+		    0, -1, &stats, sizeof(struct stats), "maildrop_init");
+	} else {
+		logit(LOG_CRIT, "%zu: maildrop init failed %s",
+		    session_id, buf);
+		imsgev_xcompose(iev, IMSG_MAILDROP_INIT, session_id,
+		    0, -1, NULL, 0, "maildrop_init");
 	}
 }
 

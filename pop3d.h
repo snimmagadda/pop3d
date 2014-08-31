@@ -129,7 +129,7 @@ enum state {
 
 struct session {
 	SPLAY_ENTRY(session)	entry;
-	struct imsgev		iev_maildrop;
+	struct imsgev		*iev_maildrop;
 	struct iobuf		iobuf;
 	struct io		io;
 	char			user[ARGLEN];

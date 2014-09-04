@@ -147,14 +147,15 @@ session_close(struct session *s, int flush)
 
 	io_clear(&entry->io);
 	iobuf_clear(&entry->iobuf);
-	 /* 
-	  * If the session hadn't made it to TRANSACTION
-	  * iev_maildrop is not inited.
-	  */
+	/* 
+	 * If the session hadn't made it to TRANSACTION
+	 * iev_maildrop is not inited.
+	 */
 	if (entry->iev_maildrop) {
 		imsgev_clear(entry->iev_maildrop);
 		entry->iev_maildrop->terminate = 1;
 	}
+
 	logit(LOG_INFO, "%u: session closed", entry->id);
 	free(entry);
 }

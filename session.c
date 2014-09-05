@@ -97,7 +97,7 @@ struct session_tree	sessions;
 static int		_pop3_debug = 0;
 
 void
-session_init(struct listener *l, int fd)
+session_init(struct listener *l, int fd, const struct sockaddr_storage *ss)
 {
 	struct session	*s;
 	void		*ssl;
@@ -105,6 +105,7 @@ session_init(struct listener *l, int fd)
 
 	s = xcalloc(1, sizeof(*s), "session_init");
 	s->l = l;
+	memmove(&s->ss, ss, sizeof(*ss));
 	if (iobuf_init(&s->iobuf, 0, 0) == -1)
 		fatal("iobuf_init");
 
@@ -120,7 +121,7 @@ session_init(struct listener *l, int fd)
 		return;
 	}
 
-	log_connect(s->id, &l->ss, l->ss.ss_len);
+	log_connect(s->id, &s->ss, s->ss.ss_len);
 	SPLAY_INSERT(session_tree, &sessions, s);
 	session_reply(s, "%s", "+OK pop3d ready");
 	io_set_write(&s->io);
@@ -188,7 +189,7 @@ session_io(struct io *io, int evt)
 	case IO_TLSREADY:
 		/* greet only for pop3s, STLS already greeted */
 		if (s->flags & POP3S) {
-			log_connect(s->id, &s->l->ss, s->l->ss.ss_len);
+			log_connect(s->id, &s->ss, s->ss.ss_len);
 			session_reply(s, "%s", "+OK pop3 ready");
 			io_set_write(&s->io);
 		}

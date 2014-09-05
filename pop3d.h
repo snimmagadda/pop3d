@@ -114,7 +114,6 @@ struct auth_req {
 };
 
 struct listener {
-	struct sockaddr_storage	ss;
 	struct event		ev;
 	struct event		pause;
 	int			flags;
@@ -129,14 +128,15 @@ enum state {
 
 struct session {
 	SPLAY_ENTRY(session)	entry;
-	struct imsgev		*iev_maildrop;
 	struct iobuf		iobuf;
 	struct io		io;
+	struct sockaddr_storage	ss;
 	char			user[ARGLEN];
 	char			pass[ARGLEN];
 	size_t			m_sz;
 	size_t			nmsgs;
 	struct listener		*l;
+	struct imsgev		*iev_maildrop;
 	uint32_t		id;
 	int			flags;
 	enum state		state;
@@ -146,7 +146,7 @@ struct session {
 void pop3_main(int [2], struct passwd *);
 
 /* session.c */
-void session_init(struct listener *, int);
+void session_init(struct listener *, int, const struct sockaddr_storage *);
 void session_close(struct session *, int);
 void session_reply(struct session *, char *, ...);
 void session_set_state(struct session *, enum state);

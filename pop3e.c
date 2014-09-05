@@ -176,8 +176,7 @@ pop3_accept(int fd, short events, void *arg)
 	}
 
 	set_nonblocking(s);
-	l->ss = ss;
-	session_init(l, s);
+	session_init(l, s, &ss);
 }
 
 static void

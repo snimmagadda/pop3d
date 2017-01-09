@@ -33,8 +33,6 @@
 
 #define SSL_CIPHERS		"HIGH"
 #define SSL_SESSION_TIMEOUT	300
-#define CERTFILE		"/etc/ssl/server.crt"
-#define KEYFILE			"/etc/ssl/private/server.key"
 
 static char *ssl_load_file(const char *, off_t *);
 
@@ -52,7 +50,7 @@ ssl_init(void)
 }
 
 void *
-ssl_setup(void)
+ssl_setup(const char *certfile, const char *keyfile)
 {
 	SSL_CTX *ctx = NULL;
 	char	*cert, *key;
@@ -73,13 +71,13 @@ ssl_setup(void)
 	    SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
 
 	/* SSL certificate, key loading */
-	cert = ssl_load_file(CERTFILE, &cert_len);
+	cert = ssl_load_file(certfile, &cert_len);
 	if (cert == NULL)
-		fatal("ssl_load_file: Unable to load " CERTFILE);
+		fatal("ssl_load_file: certificate");
 
-	key = ssl_load_file(KEYFILE, &key_len);
+	key = ssl_load_file(keyfile, &key_len);
 	if (key == NULL)
-		fatal("ssl_load_file: Unable to load " KEYFILE);
+		fatal("ssl_load_file: key");
 
 	if (!SSL_CTX_set_cipher_list(ctx, SSL_CIPHERS))
 		goto err;

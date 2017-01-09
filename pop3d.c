@@ -38,6 +38,8 @@
 #define	MBOX_PATH	"/var/mail/%u"
 #define MAILDIR_PATH	"~/Maildir"
 #define	POP3D_USER	"_pop3d"
+#define CERTFILE	"/etc/ssl/server.crt"
+#define KEYFILE		"/etc/ssl/private/server.key"
 
 static void authenticate(struct imsgev *, struct imsg *);
 static void pop3e_imsgev(struct imsgev *, int , struct imsg *);
@@ -56,12 +58,19 @@ main(int argc, char *argv[])
 	struct passwd	*pw;
 	struct event	ev_sigint, ev_sigterm, ev_sighup, ev_sigchld;
 	const char	*path = NULL, *mtype_str = "mbox";
+	const char	*cert = CERTFILE, *key = KEYFILE;
 	int		ch, d = 0, pair[2];
 
-	while ((ch = getopt(argc, argv, "dp:t:")) != -1) {
+	while ((ch = getopt(argc, argv, "c:dk:p:t:")) != -1) {
 		switch (ch) {
+		case 'c':
+			cert = optarg;
+			break;
 		case 'd':
 			d = 1;
+			break;
+		case 'k':
+			key = optarg;
 			break;
 		case 'p':
 			path = optarg;
@@ -101,7 +110,7 @@ main(int argc, char *argv[])
 	if ((pw = getpwnam(POP3D_USER)) == NULL)
 		fatalx("main: getpwnam " POP3D_USER);
 
-	pop3_main(pair, pw);
+	pop3_main(pair, pw, cert, key);
 	close(pair[1]);
 	setproctitle("[priv]");
 	logit(LOG_INFO, "pop3d ready; type:%s, path:%s", mtype_str, mpath);
@@ -233,7 +242,8 @@ usage(void)
 {
 	extern char *__progname;
 
-	fprintf(stderr, "usage: %s [-d] [-p path] [-t type]\n", __progname);
+	fprintf(stderr, "usage: %s [-c certfile] [-d] "
+	    "[-k keyfile] [-p path] [-t type]\n", __progname);
 	exit(EXIT_FAILURE);
 }
 

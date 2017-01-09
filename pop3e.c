@@ -48,7 +48,7 @@ struct imsgev		iev_pop3d;
 void			*ssl_ctx;
 
 void
-pop3_main(int pair[2], struct passwd *pw)
+pop3_main(int pair[2], struct passwd *pw, const char *cert, const char *key)
 {
 	extern struct session_tree	sessions;
 	struct event			ev_sigint, ev_sigterm;
@@ -73,7 +73,7 @@ pop3_main(int pair[2], struct passwd *pw)
 	pop3_listen("pop3");
 
 	ssl_init();
-	if ((ssl_ctx = ssl_setup()) == NULL)
+	if ((ssl_ctx = ssl_setup(cert, key)) == NULL)
 		fatal("ssl_setup failed");
 	pop3_listen("pop3s");
 

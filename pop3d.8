@@ -20,7 +20,9 @@
 .Nd Post Office Protocol (POP3) daemon.
 .Sh SYNOPSIS
 .Nm
+.Op Fl c Ar certfile
 .Op Fl d
+.Op Fl k Ar keyfile
 .Op Fl p Ar path
 .Op Fl t Ar type
 .Sh DESCRIPTION
@@ -34,13 +36,17 @@ behalf of its remote users.
 .Pp
 The options are as follows:
 .Bl -tag -width Ds
+.It Fl c Ar certfile
+Specify the certificate file. Defaults to /etc/ssl/server.crt.
 .It Fl d
 Do not daemonize. If this option is specified,
 .Nm
 will run in foreground and log to
 .Em stderr .
+.It Fl k Ar keyfile
+Specify the key file. Defaults to /etc/ssl/private.key.
 .It Fl p
-Path to the maildrop. Defaults to /var/mail/%u in case of mbox and 
+Path to the maildrop. Defaults to /var/mail/%u in case of mbox and
 ~/Maildir in case of maildir.
 .Nm
 expands '~' to user's home dir
@@ -49,14 +55,11 @@ and '%u' to user's name if specified in the path.
 Specify maildrop type. Options are mbox and maildir. Defaults to mbox.
 .El
 .Sh FILES
-.Bl -tag -width "/etc/ssl/private/server.key" -compact
+.Bl -tag -width Ds -compact
 .It Pa ~/maildir
 .It Pa /var/mail/%u
 User maildrops
-.Pp
-.It /etc/ssl/server.crt
-.It /etc/ssl/private/server.key
-Location of SSL certificate and key
+.El
 .Sh SEE ALSO
 .Xr smtpd 8 ,
 .Xr ssl 8
@@ -82,5 +85,6 @@ Location of SSL certificate and key
 .%A M. Yevstifeyev
 .%D August 2011
 .%R draft-melnikov-pop3-over-tls-02
+.Re
 .Sh CAVEATS
 POP3 authenticates using cleartext passwords on 110(POP3) port.

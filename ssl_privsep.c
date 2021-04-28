@@ -111,8 +111,8 @@ ssl_ctx_use_private_key(SSL_CTX *ctx, char *buf, off_t len)
 	}
 
 	pkey = PEM_read_bio_PrivateKey(in, NULL,
-	    ctx->default_passwd_callback,
-	    ctx->default_passwd_callback_userdata);
+	    SSL_CTX_get_default_passwd_cb(ctx),
+	    SSL_CTX_get_default_passwd_cb_userdata(ctx));
 
 	if (pkey == NULL) {
 		SSLerr(SSL_F_SSL_CTX_USE_PRIVATEKEY_FILE, ERR_R_PEM_LIB);
@@ -145,8 +145,8 @@ ssl_ctx_use_certificate_chain(SSL_CTX *ctx, char *buf, off_t len)
 	}
 
 	if ((x = PEM_read_bio_X509(in, NULL,
-	    ctx->default_passwd_callback,
-	    ctx->default_passwd_callback_userdata)) == NULL) {
+	    SSL_CTX_get_default_passwd_cb(ctx),
+	    SSL_CTX_get_default_passwd_cb_userdata(ctx))) == NULL) {
 		SSLerr(SSL_F_SSL_CTX_USE_CERTIFICATE_CHAIN_FILE, ERR_R_PEM_LIB);
 		goto end;
 	}
@@ -158,14 +158,11 @@ ssl_ctx_use_certificate_chain(SSL_CTX *ctx, char *buf, off_t len)
 	 * the CA certificates.
 	 */
 
-	if (ctx->extra_certs != NULL) {
-		sk_X509_pop_free(ctx->extra_certs, X509_free);
-		ctx->extra_certs = NULL;
-	}
+	SSL_CTX_clear_extra_chain_certs(ctx);
 
 	while ((ca = PEM_read_bio_X509(in, NULL,
-	    ctx->default_passwd_callback,
-	    ctx->default_passwd_callback_userdata)) != NULL) {
+	    SSL_CTX_get_default_passwd_cb(ctx),
+	    SSL_CTX_get_default_passwd_cb_userdata(ctx))) != NULL) {
 
 		if (!SSL_CTX_add_extra_chain_cert(ctx, ca))
 			goto end;
@@ -195,7 +192,7 @@ ssl_ctx_load_verify_memory(SSL_CTX *ctx, char *buf, off_t len)
 	X509_LOOKUP		*lu;
 	struct iovec		 iov;
 
-	if ((lu = X509_STORE_add_lookup(ctx->cert_store,
+	if ((lu = X509_STORE_add_lookup(SSL_CTX_get_cert_store(ctx),
 	    &x509_mem_lookup)) == NULL)
 		return (0);
 

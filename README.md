@@ -1,3 +1,5 @@
+I am no longer using this code, archived.
+
 pop3d
 =====
 
